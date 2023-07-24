@@ -45,6 +45,7 @@
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages terminals)
+  #:use-module (gnu packages tls)
   #:use-module (gnu packages video)
   #:use-module (gnu packages web)
   #:use-module (gnu packages xdisorg)
@@ -58,7 +59,7 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1))
 
-(define nvidia-version "515.76")
+(define nvidia-version "535.54.03")
 
 (define computed-origin-method
   (@@ (guix packages) computed-origin-method))
@@ -83,6 +84,9 @@
                     (canonicalize-path #+grep)
                     (canonicalize-path #+tar)
                     (canonicalize-path #+which)
+                    (canonicalize-path #+zstd)
+                    (canonicalize-path #+openssl-3.0)
+                    (canonicalize-path #+openssl-1.1)
                     (canonicalize-path #+xz)))
              (setenv "XZ_OPT" (string-join (%xz-parallel-args)))
              (invoke "sh" #$installer "-x")
@@ -101,8 +105,7 @@
        (uri (string-append
              "https://us.download.nvidia.com/XFree86/Linux-x86_64/"
              version "/NVIDIA-Linux-x86_64-" version ".run"))
-       (sha256
-        (base32 "0i5zyvlsjnfkpfqhw6pklp0ws8nndyiwxrg4pj04jpwnxf6a38n6"))))))
+       (sha256 (base32 "10j0bgqcmhvdf9zikyrqciig0w8fw65zfw53cs8y3fd1gvsn8is5"))))))
 
 (define-public gpustat
   (package
@@ -280,6 +283,8 @@ KERNEL==\"nvidia_uvm\", RUN+=\"@sh@ -c '@mknod@ -m 666 /dev/nvidia-uvm-tools c $
                                         (string-append #$output "/lib")
                                         (string-append #$gcc:lib "/lib")
                                         (string-append #$gtk+-2 "/lib")
+                                        (string-append #$openssl-1.1 "/lib")
+                                        (string-append #$openssl-3.0 "/lib")
                                         (string-append #$(this-package-input "atk") "/lib")
                                         (string-append #$(this-package-input "cairo") "/lib")
                                         (string-append #$(this-package-input "gdk-pixbuf") "/lib")
@@ -291,6 +296,7 @@ KERNEL==\"nvidia_uvm\", RUN+=\"@sh@ -c '@mknod@ -m 666 /dev/nvidia-uvm-tools c $
                                         (string-append #$(this-package-input "libxext") "/lib")
                                         (string-append #$(this-package-input "mesa") "/lib")
                                         (string-append #$(this-package-input "pango") "/lib")
+                                        (string-append #$(this-package-input "openssl") "/lib")
                                         (string-append #$(this-package-input "wayland") "/lib"))
                                   ":")))
                      (define (patch-elf file)
@@ -349,6 +355,8 @@ KERNEL==\"nvidia_uvm\", RUN+=\"@sh@ -c '@mknod@ -m 666 /dev/nvidia-uvm-tools c $
      (list `(,gcc "lib")
            atk
            bash-minimal
+           openssl
+           openssl-1.1
            cairo
            coreutils
            gdk-pixbuf
