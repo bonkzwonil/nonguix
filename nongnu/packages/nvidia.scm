@@ -59,7 +59,8 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1))
 
-(define nvidia-version "535.54.03")
+                                        ;(define nvidia-version "535.54.03")
+(define nvidia-version "525.53");; Last 5 digit version for nvda graft
 
 (define computed-origin-method
   (@@ (guix packages) computed-origin-method))
@@ -215,7 +216,7 @@ NVIDIA Management Library")
 (define-public nvidia-driver
   (package
     (name "nvidia-driver")
-    (version "535.54")
+    (version nvidia-version)
     (source nvidia-source)
     (build-system copy-build-system)
     (arguments
