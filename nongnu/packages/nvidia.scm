@@ -215,7 +215,7 @@ NVIDIA Management Library")
 (define-public nvidia-driver
   (package
     (name "nvidia-driver")
-    (version nvidia-version)
+    (version "535.54")
     (source nvidia-source)
     (build-system copy-build-system)
     (arguments
