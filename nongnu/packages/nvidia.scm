@@ -106,7 +106,7 @@
        (uri (string-append
              "https://us.download.nvidia.com/XFree86/Linux-x86_64/"
              version "/NVIDIA-Linux-x86_64-" version ".run"))
-       (sha256 (base32 "0zv8a4x6vrqdwmwn0bz2abgfi5pv0qbqj734qk9xs7agy1qhkfvl"))))))
+       (sha256 (base32 "10j0bgqcmhvdf9zikyrqciig0w8fw65zfw53cs8y3fd1gvsn8is5"))))))
 
 (define-public gpustat
   (package
