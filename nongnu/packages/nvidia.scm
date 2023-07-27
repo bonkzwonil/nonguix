@@ -59,8 +59,8 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1))
 
-                                        ;(define nvidia-version "535.54.03")
-(define nvidia-version "525.53");; Last 5 digit version for nvda graft
+(define nvidia-version "535.54.03")
+;;(define nvidia-version "525.53");; Last 5 digit version for nvda graft
 
 (define computed-origin-method
   (@@ (guix packages) computed-origin-method))
@@ -641,6 +641,7 @@ configuration, creating application profiles, gpu monitoring and more.")
 (define-public nvda
   (package
     (inherit nvidia-driver)
+    (version (substring nvidia-version 0 6)) ;strip version to have the same length as fucking mesa
     (name "nvda")
     (source #f)
     (build-system trivial-build-system)
