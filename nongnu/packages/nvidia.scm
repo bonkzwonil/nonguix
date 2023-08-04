@@ -670,6 +670,41 @@ to use the NVIDIA driver with a package that requires mesa.")
     (inputs (list mesa nvidia-driver))
     (outputs '("out"))))
 
+;; nvda is used as a name because it has the same length as mesa which is
+;; required for grafting
+;; version without any mesa
+(define-public nvdb
+  (package
+    (inherit nvidia-driver)
+    (version (substring nvidia-version 0 6)) ;strip version to have the same length as fucking mesa
+    (name "nvdb")
+    (source #f)
+    (build-system trivial-build-system)
+    (arguments
+     (list #:modules '((guix build union))
+           #:builder
+           #~(begin
+               (use-modules (guix build union)
+                            (srfi srfi-1)
+                            (ice-9 regex))
+               (union-build #$output
+                            (list ;;#$(this-package-input "mesa") 
+                                  #$(this-package-input "nvidia-driver"))
+                            #:resolve-collision
+                            (lambda (files)
+                              (let ((file (if (string-match "nvidia-driver"
+                                                            (first files))
+                                              (first files)
+                                              (last files))))
+                                (format #t "chosen ~a ~%" file)
+                                file))))))
+    (description
+     "These are the libraries of the evil NVIDIA driver, packaged in such a
+way that you can use the transformation option @code{--with-graft=mesa=nvda}
+to use the NVIDIA driver with a package that requires mesa.")
+    (inputs (list mesa nvidia-driver))
+    (outputs '("out"))))
+
 (define mesa/fake
   (package
     (inherit mesa)
