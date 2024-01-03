@@ -558,7 +558,7 @@ userspace tools from the corresponding driver release.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1hplc42115c06cc555cjmw3c9371qn7ibwjpqjybcf6ixfd6lryq"))))
+                "037gnmljxsn0ynn9wav3k916i2p6v8zwi6k018v28h4q0qw1s8p7"))))
     (build-system gnu-build-system)
     (arguments
      (list #:tests? #f ;no test suite
