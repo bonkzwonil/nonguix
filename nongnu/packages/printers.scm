@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2021 Kahka F
-;;; Copyright © 2021 Jonathan Brielmaier <jonathan.brielmaier@web.de>
+;;; Copyright © 2021, 2023 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 
 (define-module (nongnu packages printers)
   #:use-module (gnu packages)
@@ -40,7 +40,7 @@
             ;; hplip is updated in Guix.
             (sha256
              (base32
-              "1396d9skaq5c5vxxi331nc81yhm9daws7awq0rcn1faq89mvygps")))))
+              "0zq66hm7ni6w1c3cxy1gxrxzvyvfn0lhjnia8p4azvz2r309j9s0")))))
       (package-native-inputs hplip)))
     (arguments
      (substitute-keyword-arguments (package-arguments hplip)

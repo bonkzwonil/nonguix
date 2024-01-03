@@ -15,6 +15,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages pciutils)
   #:use-module (gnu packages photo)
+  #:use-module (gnu packages qt)
   #:use-module (gnu packages video)
   #:use-module (gnu packages wget)
   #:use-module (gnu packages xiph)
@@ -55,24 +56,22 @@
                   '("chrome"
                     "chrome-sandbox"
                     "chrome_crashpad_handler"
-                    "nacl_helper"
                     "libEGL.so"
-                    "libGLESv2.so")))
+                    "libGLESv2.so"
+                    "liboptimization_guide_internal.so"
+                    "libqt5_shim.so"
+                    "libqt6_shim.so"
+                    "libvk_swiftshader.so"
+                    "libvulkan.so.1"
+                    "WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so"
+                    #$@(if (string=? repo "stable")
+                           '("nacl_helper")
+                           '()))))
         #:install-plan
          #~'(("opt/" "/share")
              ("usr/share/" "/share"))
         #:phases
          #~(modify-phases %standard-phases
-             (add-after 'unpack 'unpack-deb
-               (lambda* (#:key inputs #:allow-other-keys)
-                 (invoke "ar" "x" #$source)
-                 (invoke "rm" "-v" "control.tar.xz"
-                                   "debian-binary"
-                                   (string-append "google-chrome-" #$repo "_"
-                                                  #$version
-                                                  "-1_amd64.deb"))
-                 (invoke "tar" "xf" "data.tar.xz")
-                 (invoke "rm" "-vrf" "data.tar.xz" "etc")))
              (add-before 'install 'patch-assets
                ;; Many thanks to
                ;; https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/networking/browsers/google-chrome/default.nix
@@ -92,8 +91,23 @@
                      ((old-exe) exe))
                    (substitute* (string-append usr/share "/menu/google-" #$appname ".menu")
                      (("/opt") share)
-                     ((old-exe) exe))
-                   #t)))
+                     ((old-exe) exe)))))
+             (add-after 'install 'install-icons
+                (lambda _
+                  (define (format-icon-size name)
+                    (car
+                      (string-split
+                       (string-drop-right (string-drop name 13) 4)
+                       #\_)))
+                  (let ((icons (string-append #$output "/share/icons/hicolor"))
+                        (share (string-append #$output "/share/google/" #$appname)))
+                    (for-each (lambda (icon)
+                                (let* ((icon-name (basename icon))
+                                       (icon-size (format-icon-size icon-name))
+                                       (target (string-append icons "/" icon-size "x" icon-size "/apps/google-" #$appname ".png")))
+                                  (mkdir-p (dirname target))
+                                  (rename-file icon target)))
+                              (find-files share "product_logo_.*\\.png")))))
              (add-before 'install-wrapper 'install-exe
               (lambda _
                 (let* ((bin (string-append #$output "/bin"))
@@ -104,7 +118,6 @@
                   (symlink chrome-target exe)
                   (wrap-program exe
                     '("CHROME_WRAPPER" = (#$appname)))))))))
-     (native-inputs (list tar))
      (inputs
       (list bzip2
             curl
@@ -120,6 +133,8 @@
             opus
             pciutils
             pipewire
+            qtbase-5
+            qtbase
             snappy
             util-linux
             xdg-utils
@@ -131,10 +146,10 @@
      (license (nonfree "https://www.google.com/intl/en/chrome/terms/")))))
 
 (define-public google-chrome-stable
-  (make-google-chrome "stable" "114.0.5735.106" "1zlw9gjb2fmjf1d952adqg07cyq60yck0aarz20lcvv2jzb7s46i"))
+  (make-google-chrome "stable" "120.0.6099.71" "15r1kx4jnbrcw7kfma528ks5ic17s4ydh1ncsb680himhln02z64"))
 
 (define-public google-chrome-beta
-  (make-google-chrome "beta" "115.0.5790.13" "11v374p82k8xbak37c377km9y2hvy8avw6mjl9az5kzb2am3g566"))
+  (make-google-chrome "beta" "121.0.6167.8" "0q5gdsczhqyk4irhqwfw4qcspk3bi8knj83lx5hx000lil5nqc46"))
 
 (define-public google-chrome-unstable
-  (make-google-chrome "unstable" "116.0.5803.2" "0qgp0m67bpaali7w6bxy1jzw0aig4iiqqgg023k1q32712s192cs"))
+  (make-google-chrome "unstable" "122.0.6170.3" "04plb14z3wlagg2b2p9plr91if1r84mnmb46cxs08x3m6dapqcj6"))

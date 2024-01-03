@@ -20,6 +20,7 @@
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021, 2022, 2023 John Kehayias <john.kehayias@protonmail.com>
 ;;; Copyright © 2022 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2023 Tomas Volf <wolf@wolfsden.cz>
 
 (define-module (nongnu packages mozilla)
   #:use-module (guix build-system gnu)
@@ -64,6 +65,7 @@
   #:use-module (gnu packages python)
   #:use-module (gnu packages rust)
   #:use-module (gnu packages rust-apps)
+  #:use-module (gnu packages speech)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages video)
   #:use-module (nongnu packages wasm)
@@ -93,21 +95,21 @@
                (base32
                 "0iccpdvc0kvpww5a31k9gjkqigyz016i7v80r9zamd34w4fl6mx4"))))))
 
-;; Update this id with every firefox update to it's release date.
-;; It's used for cache validation and therefor can lead to strange bugs.
-(define %firefox-esr-build-id "20230704000000")
+;; Update this id with every firefox update to its release date.
+;; It's used for cache validation and therefore can lead to strange bugs.
+(define %firefox-esr-build-id "20231218150756")
 
 (define-public firefox-esr
   (package
     (name "firefox-esr")
-    (version "102.13.0esr")
+    (version "115.6.0esr")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://archive.mozilla.org/pub/firefox/releases/"
                            version "/source/firefox-" version ".source.tar.xz"))
        (sha256
-        (base32 "0b1sq4cadzqi7rk3cz6k6l5bg5s02ivff2n3gznd2rdzwhysngzw"))))
+        (base32 "0rmw486yhkb1is1j2fy51djl5p5qggf2fhp2hgzfdj4s2bjydmv6"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -154,6 +156,7 @@
             "--disable-elf-hack"))
       #:imported-modules %cargo-utils-modules
       #:modules `((ice-9 regex)
+                  (ice-9 string-fun)
                   (ice-9 ftw)
                   (srfi srfi-1)
                   (srfi srfi-26)
@@ -230,6 +233,22 @@
               (substitute* "build/RunCbindgen.py"
                 (("\"--frozen\",") ""))))
           (delete 'bootstrap)
+          (add-before 'configure 'patch-SpeechDispatcherService.cpp
+            (lambda _
+              (let* ((lib "libspeechd.so.2")
+                     (file "dom/media/webspeech/synth/speechd/SpeechDispatcherService.cpp")
+                     (old-content (call-with-input-file file get-string-all)))
+                (substitute
+                 file
+                 `((,(format #f "~s" lib)
+                    . ,(λ (line _)
+                         (string-replace-substring
+                          line
+                          lib
+                          (string-append #$speech-dispatcher "/lib/" lib))))))
+                (if (string=? old-content
+                              (call-with-input-file file get-string-all))
+                    (error "substitute did nothing, phase requires an update")))))
           (add-before 'configure 'set-build-id
             ;; Firefox will write the timestamp to output, which is harmful
             ;; for reproducibility, so change it to a fixed date.  Use a
@@ -418,7 +437,7 @@
         gtk+
         gtk+-2
         hunspell
-        icu4c
+        icu4c-73
         jemalloc
         libcanberra
         libevent
@@ -442,8 +461,9 @@
         pipewire
         pixman
         pulseaudio
-        startup-notification
+        speech-dispatcher
         sqlite
+        startup-notification
         eudev
         unzip
         zip
@@ -458,12 +478,12 @@
         wasm32-wasi-clang-toolchain
         m4
         nasm
-        node
+        node-lts
         perl
         pkg-config
         python
         rust-firefox-esr
-        rust-cbindgen-0.23
+        rust-cbindgen-0.24
         which
         yasm))
     (home-page "https://mozilla.org/firefox/")
@@ -510,22 +530,22 @@ MOZ_ENABLE_WAYLAND=1 exec ~a $@\n"
              ((firefox) out))
            #t))))))
 
-;; Update this id with every firefox update to it's release date.
-;; It's used for cache validation and therefor can lead to strange bugs.
-(define %firefox-build-id "20230711000000")
+;; Update this id with every firefox update to its release date.
+;; It's used for cache validation and therefore can lead to strange bugs.
+(define %firefox-build-id "20231218153158")
 
 (define-public firefox
   (package
     (inherit firefox-esr)
     (name "firefox")
-    (version "115.0.2")
+    (version "121.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://archive.mozilla.org/pub/firefox/releases/"
                            version "/source/firefox-" version ".source.tar.xz"))
        (sha256
-        (base32 "0m0nxsdsij8sx8xiynar2rivfmz9yd05hzxcjyfvvd0k9h948a3b"))))
+        (base32 "193al259awzfi5c3pf8257p8qr9i4biapx9bw8ijmzr3klasbizd"))))
     (arguments
      (substitute-keyword-arguments (package-arguments firefox-esr)
        ((#:phases phases)
@@ -533,51 +553,16 @@ MOZ_ENABLE_WAYLAND=1 exec ~a $@\n"
             (replace 'set-build-id
               (lambda _
                 (setenv "MOZ_BUILD_DATE" #$%firefox-build-id)))))))
-    (inputs
-     (modify-inputs (package-inputs firefox-esr)
-       (replace "icu4c" icu4c-73)))
     (native-inputs
      (modify-inputs (package-native-inputs firefox-esr)
        (replace "rust" rust-firefox)
        (replace "rust:cargo" `(,rust-firefox "cargo"))
-       (replace "node" node-lts)
-       (replace "rust-cbindgen" rust-cbindgen-0.24)))
+       (replace "rust-cbindgen" rust-cbindgen-0.26)))
     (description
      "Full-featured browser client built from Firefox source tree, without
 the official icon and the name \"firefox\".")))
 
-(define-public firefox/wayland
-  (package
-    (inherit firefox)
-    (name "firefox-wayland")
-    (native-inputs '())
-    (inputs
-     `(("bash" ,bash-minimal)
-       ("firefox" ,firefox)))
-    (build-system trivial-build-system)
-    (arguments
-     '(#:modules ((guix build utils))
-       #:builder
-       (begin
-         (use-modules (guix build utils))
-         (let* ((bash    (assoc-ref %build-inputs "bash"))
-                (firefox (assoc-ref %build-inputs "firefox"))
-                (out     (assoc-ref %outputs "out"))
-                (exe     (string-append out "/bin/firefox")))
-           (mkdir-p (dirname exe))
-
-           (call-with-output-file exe
-             (lambda (port)
-               (format port "#!~a
-MOZ_ENABLE_WAYLAND=1 exec ~a $@\n"
-                       (string-append bash "/bin/bash")
-                       (string-append firefox "/bin/firefox"))))
-           (chmod exe #o555)
-
-           ;; Provide the manual and .desktop file.
-           (copy-recursively (string-append firefox "/share")
-                             (string-append out "/share"))
-           (substitute* (string-append
-                         out "/share/applications/firefox.desktop")
-             ((firefox) out))
-           #t))))))
+;; As of Firefox 121.0, Firefox uses Wayland by default. This means we no longer need a seperate package
+;; for Firefox on Wayland.
+(define-public firefox-wayland
+  (deprecated-package "firefox-wayland" firefox))

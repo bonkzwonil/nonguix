@@ -3,6 +3,7 @@
 ;;; Copyright © 2022, 2023 John Kehayias <john.kehayias@protonmail.com>
 ;;; Copyright © 2022 Evgenii Lepikhin <johnlepikhin@gmail.com>
 ;;; Copyright © 2023 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2023 Raven Hallsby <karl@hallsby.org>
 
 (define-module (nongnu packages messaging)
   #:use-module (gnu packages base)
@@ -35,7 +36,7 @@
 (define-public element-desktop
   (package
     (name "element-desktop")
-    (version "1.11.34")
+    (version "1.11.51")
     (source
      (origin
        (method url-fetch)
@@ -44,7 +45,7 @@
          "https://packages.riot.im/debian/pool/main/e/" name "/" name "_" version
          "_amd64.deb"))
        (sha256
-        (base32 "1ijag6ppkswvbv4zhxpm1vdk929mwjhy2cg92hm85a2ykp3x0lp9"))))
+        (base32 "018i2ba66g4lr7cm9psnrkjhw6y5jpfa5imdfa34xlpbf0pglp6r"))))
     (supported-systems '("x86_64-linux"))
     (build-system chromium-binary-build-system)
     (arguments
@@ -53,25 +54,19 @@
            #~'("lib/Element/element-desktop")
            #:phases
            #~(modify-phases %standard-phases
-               (replace 'unpack
+               (add-after 'binary-unpack 'setup-cwd
                  (lambda _
-                   (invoke "ar" "x" #$source)
-                   (invoke "tar" "xvf" "data.tar.xz")
                    (copy-recursively "usr/" ".")
                    ;; Use the more standard lib directory for everything.
                    (rename-file "opt/" "lib")
                    ;; Remove unneeded files.
                    (delete-file-recursively "usr")
-                   (delete-file "control.tar.gz")
-                   (delete-file "data.tar.xz")
-                   (delete-file "debian-binary")
                    ;; Fix the .desktop file binary location.
                    (substitute* '("share/applications/element-desktop.desktop") 
                      (("/opt/Element/")
-                      (string-append #$output "/lib/Element/")))))
-               (add-after 'install 'symlink-binary-file-and-cleanup
+                      (string-append #$output "/bin/")))))
+               (add-after 'install 'symlink-binary-file
                  (lambda _
-                   (delete-file (string-append #$output "/environment-variables"))
                    (mkdir-p (string-append #$output "/bin"))
                    (symlink (string-append #$output "/lib/Element/element-desktop")
                             (string-append #$output "/bin/element-desktop"))))
@@ -83,8 +78,6 @@
                           (list
                            (string-append #$output "/lib/Element"))
                           ":")))))))))
-
-    (native-inputs (list tar))
     (home-page "https://github.com/vector-im/element-desktop")
     (synopsis "Matrix collaboration client for desktop")
     (description "Element Desktop is a Matrix client for desktop with Element Web at
@@ -97,7 +90,7 @@ its core.")
 (define-public signal-desktop
   (package
     (name "signal-desktop")
-    (version "6.25.0")
+    (version "6.41.0")
     (source
      (origin
        (method url-fetch)
@@ -106,7 +99,7 @@ its core.")
          "https://updates.signal.org/desktop/apt/pool/s/" name "/" name "_" version
          "_amd64.deb"))
        (sha256
-        (base32 "1kyd1dmlihsyv269vdc2ib7vlhiinxmlkyqs6ac6y0xjk2ixarp9"))))
+        (base32 "0y69dap2arsnmm193f731n1mavcq2cjrbdd26cr5fl934fgp428g"))))
     (supported-systems '("x86_64-linux"))
     (build-system chromium-binary-build-system)
     (arguments
@@ -115,26 +108,19 @@ its core.")
            #~'("lib/Signal/signal-desktop")
            #:phases
            #~(modify-phases %standard-phases
-               (replace 'unpack
+               (add-after 'binary-unpack 'setup-cwd
                  (lambda _
-                   (invoke "ar" "x" #$source)
-                   (invoke "tar" "xvf" "data.tar.xz")
                    (copy-recursively "usr/" ".")
                    ;; Use the more standard lib directory for everything.
                    (rename-file "opt/" "lib")
                    ;; Remove unneeded files.
                    (delete-file-recursively "usr")
-                   (delete-file "control.tar.gz")
-                   (delete-file "data.tar.xz")
-                   (delete-file "debian-binary")
-                   (delete-file "environment-variables")
                    ;; Fix the .desktop file binary location.
                    (substitute* '("share/applications/signal-desktop.desktop") 
                      (("/opt/Signal/")
-                      (string-append #$output "/lib/Signal/")))))
-               (add-after 'install 'symlink-binary-file-and-cleanup
+                      (string-append #$output "/bin/")))))
+               (add-after 'install 'symlink-binary-file
                  (lambda _
-                   (delete-file (string-append #$output "/environment-variables"))
                    (mkdir-p (string-append #$output "/bin"))
                    (symlink (string-append #$output "/lib/Signal/signal-desktop")
                             (string-append #$output "/bin/signal-desktop"))))
@@ -146,7 +132,6 @@ its core.")
                           (list
                            (string-append #$output "/lib/Signal"))
                           ":")))))))))
-    (native-inputs (list tar))
     (home-page "https://signal.org/")
     (synopsis "Private messenger using the Signal protocol")
     (description "Signal Desktop is an Electron application that links with Signal on Android
@@ -159,14 +144,14 @@ or iOS.")
 (define-public zoom
   (package
     (name "zoom")
-    (version "5.14.5.2430")
+    (version "5.16.10.668")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://cdn.zoom.us/prod/" version "/zoom_x86_64.tar.xz"))
        (file-name (string-append name "-" version "-x86_64.tar.xz"))
        (sha256
-        (base32 "1as9fvzc3wqm73zx3m790yn2rk4hxr4yz2ig72v1va7i1v060zy2"))))
+        (base32 "01h16n235jr3fzvx6kzl1kv38k74n6418m2wjprlxa3hydqmcm7d"))))
     (supported-systems '("x86_64-linux"))
     (build-system binary-build-system)
     (arguments
@@ -281,6 +266,8 @@ or iOS.")
                                         "pango"
                                         "pulseaudio"
                                         "xcb-util"
+                                        "xcb-util-image"
+                                        "xcb-util-keysyms"
                                         "xcb-util-wm"
                                         "xcb-util-renderutil"
                                         "zlib")))))
@@ -320,6 +307,8 @@ or iOS.")
                                         "pango"
                                         "pulseaudio"
                                         "xcb-util"
+                                        "xcb-util-image"
+                                        "xcb-util-keysyms"
                                         "xcb-util-wm"
                                         "xcb-util-renderutil"
                                         "zlib")))))))

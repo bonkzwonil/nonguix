@@ -13,7 +13,7 @@
 (define-public vscodium
   (package
     (name "vscodium")
-    (version "1.78.2.23132")
+    (version "1.85.0.23343")
     (source
      (origin
        (method url-fetch)
@@ -22,7 +22,7 @@
          "https://github.com/VSCodium/vscodium/releases/download/" version
          "/VSCodium-linux-x64-" version ".tar.gz"))
        (sha256
-        (base32 "0ymgy0xisfxqrrmwpy0ga2rhlzhxqq39ppjfawxaf0dfdnkhgkgr"))))
+        (base32 "16m7a2j9rmnp9pqpyyy2dx09paj1qh0h4gb1dhhwakw7w0zjlxn5"))))
     (build-system chromium-binary-build-system)
     (arguments
      (list #:validate-runpath? #f ; TODO: fails on wrapped binary and included other files

@@ -260,6 +260,19 @@ in a sandboxed FHS environment."
                                "^DISPLAY$"
                                "^DRI_PRIME$"
                                "^GDK_SCALE$" ; For UI scaling.
+                               "^GUIX_LOCPATH$" ; For pressure-vessel locales.
+                               ;; For startup of added non-Steam games as it
+                               ;; seems they start in an early environment
+                               ;; before our additional settings.  (Likely
+                               ;; this can be removed when rewritten to use
+                               ;; --emulate-fhs from upstream.)  Note that
+                               ;; this is explicitly set below.  We could
+                               ;; preserve what is set before launching the
+                               ;; container, but any such directories would
+                               ;; need to be shared with the container as
+                               ;; well; this is not needed currently.
+                               "^LD_LIBRARY_PATH$"
+                               "^MANGOHUD" ; For MangoHud configuration.
                                "^PRESSURE_VESSEL_" ; For pressure vessel options.
                                "_PROXY$"
                                "_proxy$"
@@ -320,11 +333,15 @@ in a sandboxed FHS environment."
               (args (cdr (command-line)))
               (command (if DEBUG '()
                            `("--" ,run ,@args))))
-         ;; TODO: Remove once upstream change is merged and in stable pressure-vessel
-         ;; (although may want to hold off for anyone using older pressure-vessel versions
-         ;; for whatever reason), see:
-         ;; https://gitlab.steamos.cloud/steamrt/steam-runtime-tools/-/merge_requests/406
-         (setenv "PRESSURE_VESSEL_FILESYSTEMS_RO" "/gnu/store")
+         ;; Set this so that e.g. non-Steam games added to Steam will launch
+         ;; properly.  It seems otherwise they don't make it to launching
+         ;; Steam's pressure-vessel container (for Proton games).
+         (setenv "LD_LIBRARY_PATH" "/lib64:/lib")
+         ;; Set this so Steam's pressure-vessel container does not need to
+         ;; generate locales, improving startup time.  This needs to be set to
+         ;; the "usual" path, probably so they are included in the
+         ;; pressure-vessel container.
+         (setenv "GUIX_LOCPATH" "/usr/lib/locale")
          ;; By default VDPAU drivers are searched for in libvdpau's store
          ;; path, so set this path to where the drivers will actually be
          ;; located in the container.
@@ -463,12 +480,15 @@ application."
               '("/run/current-system/profile/etc"
                 "/run/current-system/profile/share"
                 "/sbin"
-                "/usr/share/vulkan/icd.d"
-                "/usr/share/vulkan/implicit_layer.d")) ; Implicit layers like MangoHud
+                "/usr/lib"
+                "/usr/share/vulkan/icd.d"))
              (for-each
               new-symlink
               `((,ld.so.cache . "/etc/ld.so.cache")
                 (,ld.so.conf . "/etc/ld.so.conf") ;; needed?
+                ;; For MangoHud implicit layers.
+                ((,guix-env "share/vulkan/implicit_layer.d") .
+                 "/usr/share/vulkan/implicit_layer.d")
                 ((,guix-env "etc/ssl") . "/etc/ssl")
                 ((,guix-env "etc/ssl") . "/run/current-system/profile/etc/ssl")
                 ((,union32 "lib") . "/lib")
@@ -478,18 +498,16 @@ application."
                 ((,union64 "lib") . "/lib64")
                 ((,union64 "lib") . "/run/current-system/profile/lib64")
                 ((,union64 "lib/locale") . "/run/current-system/locale")
+                ;; Despite using GUIX_LOCPATH, stil need locales in their
+                ;; expected location for pressure-vessel to use them.
+                ((,union64 "lib/locale") . "/usr/lib/locale")
                 ((,union64 "sbin/ldconfig") . "/sbin/ldconfig")
+                ((,union64 "share/mime") . "/usr/share/mime") ; Steam tray icon.
                 ((,union64 "share/drirc.d") . "/usr/share/drirc.d")
                 ((,union64 "share/fonts") . "/run/current-system/profile/share/fonts")
                 ((,union64 "etc/fonts") . "/etc/fonts")
                 ((,union64 "share/vulkan/explicit_layer.d") .
-                 "/usr/share/vulkan/explicit_layer.d")
-                ;; The MangoHud layer has the same file name for 64- and 32-bit,
-                ;; so create links with different names.
-                ((,union64 "share/vulkan/implicit_layer.d/MangoHud.json") .
-                 "/usr/share/vulkan/implicit_layer.d/MangoHud.json")
-                ((,union32 "share/vulkan/implicit_layer.d/MangoHud.json") .
-                 "/usr/share/vulkan/implicit_layer.d/MangoHud.x86.json")))
+                 "/usr/share/vulkan/explicit_layer.d")))
              (for-each
               icd-symlink
               ;; Use stat to follow links from packages like MangoHud.

@@ -4,7 +4,7 @@
 ;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2019 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2020, 2021 James Smith <jsubuntuxp@disroot.org>
-;;; Copyright © 2020, 2021, 2022 Jonathan Brielmaier <jonathan.brielmaier@web.de>
+;;; Copyright © 2020-2023 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 ;;; Copyright © 2020, 2022 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020, 2021, 2022 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2020, 2021, 2022 Zhu Zihao <all_but_last@163.com>
@@ -23,6 +23,7 @@
 ;;; Copyright © 2023 Jelle Licht <jlicht@fsfe.org>
 ;;; Copyright © 2023 Adam Kandur <rndd@tuta.io>
 ;;; Copyright © 2023 Hilton Chain <hako@ultrarare.space>
+;;; Copyright © 2023 Ada Stevenson <adanskana@gmail.com>
 
 (define-module (nongnu packages linux)
   #:use-module (gnu packages)
@@ -102,11 +103,8 @@
        "The unmodified Linux kernel, including nonfree blobs, for running Guix System
 on hardware which requires nonfree software to function."))))
 
-(define-public linux-6.4
-  (corrupt-linux linux-libre-6.4))
-
-(define-public linux-6.3
-  (corrupt-linux linux-libre-6.3))
+(define-public linux-6.6
+  (corrupt-linux linux-libre-6.6))
 
 (define-public linux-6.1
   (corrupt-linux linux-libre-6.1))
@@ -124,9 +122,14 @@ on hardware which requires nonfree software to function."))))
   (corrupt-linux linux-libre-4.19))
 
 (define-public linux-4.14
-  (corrupt-linux linux-libre-4.14))
+  (corrupt-linux linux-libre-4.14
+                 #:configs
+                 '("# CONFIG_GCC_PLUGIN_CYC_COMPLEXITY is not set"
+                   "# CONFIG_GCC_PLUGIN_LATENT_ENTROPY is not set"
+                   "# CONFIG_GCC_PLUGIN_STRUCTLEAK is not set"
+                   "# CONFIG_GCC_PLUGIN_RANDSTRUCT is not set")))
 
-(define-public linux linux-6.3)
+(define-public linux linux-6.6)
 ;; linux-lts points to the *newest* released long-term support version.
 (define-public linux-lts linux-6.1)
 
@@ -212,21 +215,21 @@ distribution with custom settings and new features.  It's built to provide a
 stable, responsive and smooth desktop experience."))))
 
 ;; Linux-XanMod sources
-(define-public linux-xanmod-version "6.4.3")
+(define-public linux-xanmod-version "6.5.10")
 (define-public linux-xanmod-revision "xanmod1")
 (define-public linux-xanmod-source
   (make-linux-xanmod-source
    linux-xanmod-version
    linux-xanmod-revision
-   (base32 "0z6f7lnwbw2y7wwfr253d6gg4kz0l62s71pj266hb9c0dj15xl0r")))
+   (base32 "020f97pd45lg9nw38j4hz4kqd2ch81fqdp3qkpnzpxf8kihzn2li")))
 
-(define-public linux-xanmod-lts-version "6.1.38")
+(define-public linux-xanmod-lts-version "6.1.61")
 (define-public linux-xanmod-lts-revision "xanmod1")
 (define-public linux-xanmod-lts-source
   (make-linux-xanmod-source
    linux-xanmod-lts-version
    linux-xanmod-lts-revision
-   (base32 "0c56jmvzzn8jakxffifnrj6pixywrlcwq6sxriylqxfq96bb8can")))
+   (base32 "1rp9g9qdrr2l0wwxx4myz6kr3agznama2r6q8an505l8mwdgwll8")))
 
 ;; Linux-XanMod packages
 (define-public linux-xanmod
@@ -247,20 +250,23 @@ stable, responsive and smooth desktop experience."))))
 (define-public linux-firmware
   (package
     (name "linux-firmware")
-    (version "20230515")
+    (version "20231211")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/linux/kernel/firmware/"
                                   "linux-firmware-" version ".tar.xz"))
               (sha256
                (base32
-                "0lg9l42bwyr0xn4vss0hy4xgap43djfhvddclqr4gs8ydyhwy6lb"))))
+                "1fz8vflidayal6gpjvmp75ni04b9ndxbpp5krmlpilxbbr5pxbwn"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
        #:make-flags (list (string-append "DESTDIR=" (assoc-ref %outputs "out")))
        #:phases
        (modify-phases %standard-phases
+         (replace 'install
+           (lambda* (#:key (make-flags '()) #:allow-other-keys)
+             (apply invoke "make" "install-nodedup" make-flags)))
          (delete 'validate-runpath))))
     (home-page
      "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git")
@@ -700,8 +706,8 @@ package contains nonfree firmware for the following chips:
   (deprecated-package "rtl-bt-firmware" realtek-firmware))
 
 (define-public rtl8192eu-linux-module
-  (let ((commit "865656c3a1d1aee8c4ba459ce7608756d17c712f")
-        (revision "5"))
+  (let ((commit "a928f08c1dd4f9a1e84d85811a543e974551bc4f")
+        (revision "6"))
     (package
       (name "rtl8192eu-linux-module")
       (version (git-version "0.0.0" revision commit))
@@ -714,7 +720,7 @@ package contains nonfree firmware for the following chips:
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "08nq0wlrpzm8n2g14c4jlxs0crr6s5ls1n14bc17zmpy9vlarhfx"))))
+           "1q26kyic4glmgy0hbaq46r067m6cqf7d41chgivyxn8y32rf1fgc"))))
       (build-system linux-module-build-system)
       (arguments
        `(#:make-flags
@@ -818,7 +824,7 @@ RTL8812AU, RTL8821AU, and RTL8814AU chips.")
 (define-public r8168-linux-module
   (package
     (name "r8168-linux-module")
-    (version "8.051.02")
+    (version "8.052.01")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -827,19 +833,9 @@ RTL8812AU, RTL8821AU, and RTL8814AU chips.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "16mpr0np6xbmzdnwg4p3q6yli2gh032k98g4vplya33hrn50vh52"))))
+                "01mi7hh92nc7jaxkfrpz7j0ci78djrhgmq0im4k1270mwmvr0yzj"))))
     (arguments
-     (list #:tests? #f
-           #:phases #~(modify-phases %standard-phases
-                        (add-after 'unpack 'enter-src-directory
-                          (lambda _
-                            (chdir "src")))
-                        ;; Needed to compile module for linux >= 6.1
-                        (add-before 'build 'fix-build
-                          (lambda _
-                            (substitute* "r8168.h"
-                              (("netif_napi_add\\(ndev, &priv->napi, function, weight\\)")
-                               "netif_napi_add(ndev, &priv->napi, function)")))))))
+     (list #:tests? #f))
     (build-system linux-module-build-system)
     (home-page "https://github.com/mtorromeo/r8168")
     (synopsis "Linux driver for Realtek PCIe network adapters")
@@ -1072,7 +1068,7 @@ driver:
 (define-public intel-microcode
   (package
     (name "intel-microcode")
-    (version "20230613")
+    (version "20231114")
     (source
      (origin
        (method git-fetch)
@@ -1083,7 +1079,7 @@ driver:
              (commit (string-append "microcode-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1clwzzivs6w8d35dpfv6ardi2gnhpsk1sr31dw7vq227yv0pvzml"))))
+        (base32 "07c7hkwpvb9056s73s55sg04cxr1d9n1sd9r1g7sm3gh70yc17ki"))))
     (build-system copy-build-system)
     (arguments
      (list #:install-plan
@@ -1125,7 +1121,7 @@ documented in the respective processor revision guides.")
 (define-public sof-firmware
   (package
     (name "sof-firmware")
-    (version "2.2.3")
+    (version "2.2.6")
     (source
      (origin
        (method url-fetch)
@@ -1133,7 +1129,7 @@ documented in the respective processor revision guides.")
                            version "/sof-bin-v" version ".tar.gz"))
        (sha256
         (base32
-         "0hnvzbjgib8f0m2gw345vk0p4h9ba34g7vciih1jgcz2y5kgs7sr"))))
+         "018901g5hshrqf2d0rn7yhzxcy4gmdc4v6167df880kdcfkw48lk"))))
     (build-system copy-build-system)
     (arguments
      `(#:install-plan

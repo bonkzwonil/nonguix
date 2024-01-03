@@ -32,6 +32,7 @@
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages graphics)
+  #:use-module (gnu packages gtk)
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
@@ -46,6 +47,7 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages toolkits)
   #:use-module (gnu packages video)
+  #:use-module (gnu packages xorg)
   #:use-module (nonguix multiarch-container)
   #:use-module (nonguix utils))
 
@@ -105,7 +107,8 @@
     (license (license:nonfree "file:///share/doc/steam/steam_subscriber_agreement.txt"))))
 
 (define steam-client-libs
-  `(("bash" ,bash)                      ; Required for steam startup.
+  `(("at-spi2-core" ,at-spi2-core)      ; Required (often) for SteamVR interface.
+    ("bash" ,bash)                      ; Required for steam startup.
     ("coreutils" ,coreutils)
     ("diffutils" ,diffutils)
     ("dbus-glib" ,dbus-glib)            ; Required for steam browser.
@@ -116,6 +119,7 @@
     ("find" ,findutils)                 ; Required at least for some logging.
     ("freetype" ,freetype)              ; Required for steam login.
     ("gawk" ,gawk)
+    ("gdk-pixbuf" ,gdk-pixbuf)          ; Required for steam tray icon.
     ("gcc:lib" ,gcc "lib")              ; Required for steam startup.
     ("grep" ,grep)
     ("libbsd" ,libbsd)
