@@ -59,7 +59,8 @@
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1))
 
-(define nvidia-version "535.54.03")
+;;(define nvidia-version "535.54.03")
+(define nvidia-version "550.90.07")
 ;;(define nvidia-version "525.53");; Last 5 digit version for nvda graft
 
 (define computed-origin-method
@@ -106,7 +107,7 @@
        (uri (string-append
              "https://us.download.nvidia.com/XFree86/Linux-x86_64/"
              version "/NVIDIA-Linux-x86_64-" version ".run"))
-       (sha256 (base32 "10j0bgqcmhvdf9zikyrqciig0w8fw65zfw53cs8y3fd1gvsn8is5"))))))
+       (sha256 (base32 "0cwp1cdy7smvnk0cxa923s2fg9dggwp54gqx79blz259smwzbb2i"))))))
 
 (define-public gpustat
   (package
